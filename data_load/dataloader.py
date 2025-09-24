@@ -16,22 +16,14 @@ class DataLoader:
             yield start_date + timedelta(n)
 
 
-    def get_sentiment(self, date_str, label_path):
-        price_data = np.genfromtxt(label_path, dtype=str, skip_header=False)
-        price_chg = price_data[price_data[:, 0] == date_str][0, 1].astype(float)
 
-        if price_chg > 0.0:
-            sentiment = "Positive"
-        else:
-            sentiment = "Negative"
-        return sentiment
 
-    def get_crt(self, crt_path):
-        if os.path.exists(crt_path):
-            with open(crt_path) as f:
+    def get_disease(self, disease_path):
+        if os.path.exists(disease_path):
+            with open(disease_path) as f:
                 lines = f.readlines()
-            CRTs = [line.strip() for line in lines]
-        return CRTs
+            disease = [line.strip() for line in lines]
+        return disease
 
     def get_features(self, text_path):
         features = []
@@ -49,7 +41,7 @@ class DataLoader:
         train_data = pd.DataFrame()
         test_data = pd.DataFrame()
 
-        labels = self.get_crt(self.label_dir)
+        labels = self.get_disease(self.label_dir)
         features = self.get_features(self.feature_dir)
         ticker = self.feature_dir.split('/')[-1]
 

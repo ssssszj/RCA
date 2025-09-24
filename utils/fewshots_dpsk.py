@@ -4,7 +4,7 @@ PREDICT_EXAMPLES = """
 (EXAMPLE1)
 Features: Granulocyte-to-lymphocyte ratio is 1.44, D-dimer is 0.19, chemotherapy, catheterization is CVC(Central Venous Catheter), no thoracic therapy, age at hospital is 29, platelet is 353.0, hemoglobin is 138.0, BMI is 18.83, gender is male, history of previous catheterization, no history of previous cather related thrombosis, no lung cancer, no gastric cancer, lymphoma, no gynecologic tumors, no urologic tumors.
 
-CRT Prediction: no catheter-related thrombosis 
+Disease Prediction: no catheter-related thrombosis 
 
 Explanation:Low Thrombotic Activity:
 Normal D-dimer (0.19 mg/L): This value is well below the typical threshold for thrombosis (usually >0.5 mg/L), indicating no active clot formation or breakdown.
@@ -32,7 +32,7 @@ Conclusion: Despite the presence of a CVC and lymphoma (both moderate risk facto
 (EXAMPLE2)
 Features: Granulocyte-to-lymphocyte ratio is 2.73, D-dimer is 0.1, chemotherapy, catheterization is PICC(Peripherally Inserted Central Catheter), no thoracic therapy, age at hospital is 30, platelet is 267.0, hemoglobin is 108.0, BMI is 26.04, gender is female, no history of previous catheterization, no history of previous cather related thrombosis, no lung cancer, no gastric cancer, no lymphoma, no gynecologic tumors, no urologic tumors.
 
-CRT Prediction: catheter-related thrombosis
+Disease Prediction: catheter-related thrombosis
 
 Explanation:Catheter-Related Factors (PICC Line):
 PICC lines directly increase thrombosis risk by causing endothelial injury, blood flow disruption, and activation of coagulation at the catheter site. This is the most significant contributor to CRT in this case.

@@ -86,8 +86,8 @@ def remove_fewshot(prompt: str) -> str:
 
 def remove_reflections(prompt: str) -> str:
     prefix = prompt.split('You have attempted to tackle the following task before and failed.')[0]
-    suffix = prompt.split('\n\nFacts:')[-1]
-    return prefix.strip('\n').strip() + '\n\nFacts' +  suffix.strip('\n').strip()
+    suffix = prompt.split('\n\Features:')[-1]
+    return prefix.strip('\n').strip() + '\n\Features' +  suffix.strip('\n').strip()
 
 def log_trial(agents, trial_n):
     correct, incorrect = summarize_trial(agents)
@@ -120,22 +120,27 @@ def save_results(agents, dir: str):
     for agent in agents:
         results = pd.concat([results, pd.DataFrame([{
                                         'Prompt': remove_fewshot(agent._build_agent_prompt()),
-                                        'Response': agent.scratchpad.split('CRT Prediction: ')[-1],
+                                        'Response': agent.scratchpad.split('Disease Prediction:')[-1],
                                         'Target': agent.target
                                         }])], ignore_index=True)
     results.to_csv(dir + 'results.csv', index=False)
 
 def logistic_regression_analysis(data, feature_name):
-    X = [sample["feature"] for sample in data]
+    X = [sample["features"] for sample in data]
     y = [sample["label"] for sample in data]
 
-    model = LogisticRegression(max_iter=1000)
-    model.fit(X,y)
+    model = LogisticRegression(max_iter=10000)
+    try:
+        model.fit(X,y)
+    except Exception as e:
+        print("Error in logistic regression fitting:", e)
+        print("Data:", data)
+        return {}
 
     importance = model.coef_[0]
     # print(importance)
     result = {}
-    # print(len(importance), len(feature_name))
+    print(len(importance), len(feature_name))
     # print(feature_name)
     for i in range(len(importance)):
         result[feature_name[i]] = importance[i]
@@ -143,12 +148,16 @@ def logistic_regression_analysis(data, feature_name):
     return result
 
 def decision_tree_analysis(data,feature_name,max_depth=3):
-    X = [sample["feature"] for sample in data]
+    X = [sample["features"] for sample in data]
     y = [sample["label"] for sample in data]
 
     model = DecisionTreeClassifier(max_depth=max_depth)
-    model.fit(X,y)
-
+    try:
+        model.fit(X,y)
+    except Exception as e:
+        print("Error in decision tree fitting:", e)
+        print("Data:", data)
+        return {}
     importance = model.feature_importances_
     # tree_rules = export_text(model, feature_names=[f'Feature {i}' for i in range(len(X[0]))])
     result = {}
