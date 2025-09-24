@@ -1,8 +1,13 @@
 CRT_data/
+Diabetes_data/
+EP_data/
+HeartDisease_data/
+others/
 results/
+result_baseline/
+__pycache__/
 baseline.py
+o3_baseline.py
+score.py
 test_qwen.py
 test.ipynb
-logging.txt
-correct_agent_id.txt
-baseline_order.json
