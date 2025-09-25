@@ -28,19 +28,15 @@ class PredictAgent:
 
         self.__reset_agent()
 
-    # 自定义序列化：排除不可序列化的LLM实例
     def __getstate__(self):
         state = self.__dict__.copy()
-        # 移除包含线程锁的LLM实例（这些会导致pickle失败）
         del state['predict_llm']
         del state['agent_llm']
         del state['llm']
         return state
 
-    # 自定义反序列化：重新初始化LLM实例
     def __setstate__(self, state):
         self.__dict__.update(state)
-        # 重新创建LLM实例（确保反序列化后能正常工作）
         self.predict_llm = PipeLLM()
         self.agent_llm = AgentLLM()
         self.llm = AgentLLM()

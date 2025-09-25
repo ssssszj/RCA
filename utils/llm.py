@@ -42,10 +42,10 @@ class PipeLLM:
         )
 
         timeout = httpx.Timeout(
-            connect=10,  # 连接超时
-            read=60,     # 读取超时
-            write=10,    # 写入超时
-            pool=5       # 池超时
+            connect=10,  
+            read=60,     
+            write=10,    
+            pool=5       
         )
 
         self.client = OpenAI(
@@ -53,7 +53,6 @@ class PipeLLM:
             # api_key=os.getenv("AIML_API_KEY"),
             # api_key=os.getenv("OPENAI_API_KEY"),
             base_url="https://dashscope.aliyuncs.com/compatible-mode/v1/",  # qwen
-            # base_url="https://chat.noc.pku.edu.cn/v1" # pku_deepseek
             # base_url="https://api.openai.com/v1/",  # openai
             # base_url="https://api.aimlapi.com/v1", # aiml
             # http_client=httpx.Client(transport=transport, timeout=timeout)
@@ -61,7 +60,7 @@ class PipeLLM:
     
     @retry(
         wait=wait_random_exponential(min=1, max=120), 
-        stop=stop_after_attempt(10),  # 增加重试次数
+        stop=stop_after_attempt(10),  
         retry=(
             retry_if_exception_type(openai.RateLimitError) | 
             retry_if_exception_type(openai.APITimeoutError) |
@@ -114,10 +113,10 @@ class AgentLLM:
         )
 
         timeout = httpx.Timeout(
-            connect=10,  # 连接超时
-            read=60,     # 读取超时
-            write=10,    # 写入超时
-            pool=5       # 池超时
+            connect=10,  
+            read=60,     
+            write=10,    
+            pool=5       
         )
 
         self.client = OpenAI(
@@ -126,7 +125,6 @@ class AgentLLM:
             # api_key=os.getenv("AIML_API_KEY"),
             # api_key=os.getenv("OPENAI_API_KEY"),
             # base_url="https://dashscope.aliyuncs.com/compatible-mode/v1/",  # qwen
-            # base_url="https://chat.noc.pku.edu.cn/v1" # pku_deepseek
             # base_url="https://api.openai.com/v1/",  # openai
             # base_url="https://api.aimlapi.com/v1", # aiml
             base_url="https://openrouter.ai/api/v1", 
@@ -135,7 +133,7 @@ class AgentLLM:
     
     @retry(
         wait=wait_random_exponential(min=1, max=120), 
-        stop=stop_after_attempt(3),  # 增加重试次数
+        stop=stop_after_attempt(3),  
         retry=(
             retry_if_exception_type(openai.RateLimitError) | 
             retry_if_exception_type(openai.APITimeoutError) |
@@ -181,7 +179,6 @@ class ScoreLLM:
             # api_key=os.getenv("DASHSCOPE_API_KEY"),  
             api_key=os.getenv("OPENROUTER_API_KEY"),
             # base_url="https://dashscope.aliyuncs.com/compatible-mode/v1/",  # qwen
-            # base_url="https://chat.noc.pku.edu.cn/v1" #pku_deepseek
             # base_url="https://api.openai.com/v1/",  #openai
             base_url="https://openrouter.ai/api/v1", 
         )

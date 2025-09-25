@@ -12,49 +12,46 @@ import pickle
 
 class Exp_Model:
     def __init__(self, args):
-        # 保留其他初始化代码...
         self.args = args
         self.dataloader = DataLoader(args)
         self.train_data,self.test_data = self.dataloader.load()
         print(self.test_data['target'].value_counts())
         print(self.train_data['target'].value_counts())
         
-        # 断点文件路径设置（修改部分）
+        # checkpoint directory
         parentdir, _ = os.path.split(self.args.save_dir)
         save_path = os.path.join(parentdir, PipeLLM().model.split('/')[-1],_)
         print(save_path)
         self.checkpoint_dir = os.path.join(save_path, "checkpoints")
         os.makedirs(self.checkpoint_dir, exist_ok=True)
-        # 取消软链接，用一个固定文件保存最新断点
+        
         self.latest_checkpoint = os.path.join(self.checkpoint_dir, "latest_checkpoint.pkl")
-        # 保留按epoch保存的历史断点（可选，用于回溯）
+        
         self.epoch_checkpoint_pattern = os.path.join(self.checkpoint_dir, "checkpoint_epoch_{}.pkl")
 
     def _save_checkpoint(self, state, epoch):
-        """保存断点状态，不使用软链接，直接覆盖最新断点文件"""
-        # 1. 保存当前epoch的历史断点（可选，用于需要回溯到特定epoch的场景）
+        """save checkpoint state (always overwrite the latest checkpoint file)"""
         epoch_checkpoint_path = self.epoch_checkpoint_pattern.format(epoch)
         with open(epoch_checkpoint_path, 'wb') as f:
             pickle.dump(state, f)
         
-        # 2. 直接覆盖保存最新断点文件（核心修改）
         with open(self.latest_checkpoint, 'wb') as f:
             pickle.dump(state, f)
         
-        print(f"已保存断点至: {epoch_checkpoint_path}")
-        print(f"已更新最新断点: {self.latest_checkpoint}")
+        print(f"Save checkpoint to: {epoch_checkpoint_path}")
+        print(f"Update latest checkpoint: {self.latest_checkpoint}")
 
     def _load_checkpoint(self):
-        """加载最新断点状态（直接读取固定的最新断点文件）"""
+        """load checkpoint if exists"""
         if not os.path.exists(self.latest_checkpoint):
-            print("未找到断点文件")
+            print("No checkpoint found, start from scratch.")
             return None
         try:
             with open(self.latest_checkpoint, 'rb') as f:
                 state = pickle.load(f)
             return state
         except Exception as e:
-            print(f"加载断点失败: {e}")
+            print(f"Loading checkpoint failed: {e}")
             return None
 
     def train(self):
@@ -98,8 +95,8 @@ class Exp_Model:
         explanation_path = os.path.join(save_path, explanation_name)
         distribution_path = os.path.join(save_path, distribution_name)
 
-        # 初始化需要跟踪的状态变量
-        current_epoch = 0  # 当前训练轮次
+        # initilize or load training state
+        current_epoch = 0  
         best_mcc = -1.0
         guideline = ""
         best_guideline = ""
@@ -112,11 +109,11 @@ class Exp_Model:
         reflect_prompt = MODIFY_GUIDELINE_INSTRUCTION
         summarize_prompt = SUMMARIZE_REVISE_INSTRUCTION
 
-        # 尝试加载断点
+        # load ckpt if exists
         checkpoint = self._load_checkpoint()
         if self.args.load_ckpt:
             try:
-                # 恢复状态变量
+                # recover training state
                 current_epoch = checkpoint['current_epoch']
                 best_mcc = checkpoint['best_mcc']
                 guideline = checkpoint['guideline']
@@ -127,16 +124,14 @@ class Exp_Model:
                 explanations = checkpoint['explanations']
                 iterative_predictions = checkpoint['iterative_predictions']
                 iterative_list = checkpoint['iterative_list']
-                # 恢复agents和valid_agents的状态
                 agents = checkpoint['agents']
                 valid_agents = checkpoint['valid_agents']
-                print(f"已加载最新断点，将从第 {checkpoint['current_epoch'] + 1} 轮继续训练")
+                print(f"Loaded latest checkpoint, continue training from epoch {checkpoint['current_epoch'] + 1} ")
 
-                # 恢复日志
                 with open(distribution_path, 'w') as f:
                     f.write(distribution+'\n')
             except Exception as e:
-                print(f"断点文件损坏或不完整: {e}，将从头开始训练")
+                print(f"checkpoint damaged or incomplete: {e}, start from scratch.")
                 current_epoch = 0
                 best_mcc = -1.0
                 guideline = ""
@@ -147,34 +142,12 @@ class Exp_Model:
                 explanations = []
                 iterative_predictions = []
                 iterative_list = []
-        else:
-            # generate distribution for afterwards reflection
-            distribution = ""
-            '''
-            distribute_prompt = DISTRIBUTION_EXTRACT_INSTRUCTION
-            original_samples = ""
-            for i in range(len(agents)):
-                original_samples += f'sample{i+1}: {agents[i].features}\n'
-                if i % num_per_group == num_per_group - 1 or i == len(agents) - 1:
-                    prompt = distribute_prompt.format(
-                        num_samples=len(agents),
-                        num_per_group=num_per_group if i % num_per_group == num_per_group - 1 else len(agents) % num_per_group,
-                        samples=original_samples,
-                        distribution=distribution
-                    )
-                    try:  # 增加API调用异常捕获
-                        response = Guide_LLM(prompt)
-                    except Exception as e:
-                        print(f"生成distribution时API超时: {e}")
-                        return  # 退出训练，等待重启
-                    distribution = response.split("Features Distribution:")[-1].strip()
-            '''
             
         
         with open(distribution_path, 'r') as f:
             distribution = f.read().strip()
         
-        # 自反思训练循环（从current_epoch开始）
+        # self-reflection process
         for trial in range(current_epoch, self.args.num_epochs):
             
             if trial > current_epoch:
@@ -183,15 +156,15 @@ class Exp_Model:
                 for agent in valid_agents:
                     agent.is_validated = False
 
-            # train阶段：逐个处理agent
+            # training
             for idx, agent in enumerate(tqdm(agents, desc=f"Training Agents in Trial {trial + 1}")):
-                if agent.is_trained:  # 跳过已训练的agent
+                if agent.is_trained:  
                     continue
                 try:
                     agent.guide_run(guideline, distribution)
-                    agent.is_trained = True  # 标记为已训练
+                    agent.is_trained = True  
                 except Exception as e:
-                    print(f"训练agent {idx}时API超时: {e}，保存断点后退出")
+                    print(f"Encountered API timeout {e} while training agent {idx}. Saving breakpoint and exiting.")
                     self._save_checkpoint({
                         'current_epoch': trial,
                         'best_mcc': best_mcc,
@@ -208,7 +181,7 @@ class Exp_Model:
                     }, trial)
                     return
 
-                # reflection逻辑
+                # reflection
                 if not agent.is_correct():
                     wrong_agents.append(agent)
                     reflect_samples += f'sample{len(wrong_agents)}: {agent.features}\n true Disease label: {agent.target}\n'
@@ -222,7 +195,7 @@ class Exp_Model:
                         try:
                             response = Reflect_LLM(prompt)
                         except Exception as e:
-                            print(f"反思时API超时: {e}，保存断点后退出")
+                            print(f"Encountered API timeout {e} while reflection. Saving breakpoint and exiting.")
                             self._save_checkpoint({
                                 'current_epoch': trial,
                                 'best_mcc': best_mcc,
@@ -242,7 +215,7 @@ class Exp_Model:
                         reflect_samples = ''
                         wrong_agents.clear()
 
-            # 完成当前epoch的train后，保存一次断点
+            # save checkpoint after training phase
             self._save_checkpoint({
                 'current_epoch': trial,
                 'best_mcc': best_mcc,
@@ -258,17 +231,17 @@ class Exp_Model:
                 'valid_agents': valid_agents
             }, trial)
 
-            # train后的统计和日志
+            # log training results
             correct, incorrect = summarize_trial(agents)
             print(f'Finished Training {trial + 1}, Correct: {len(correct)}, Incorrect: {len(incorrect)}')
             logger.info(f'Finished Training {trial + 1}, Correct: {len(correct)}, Incorrect: {len(incorrect)}')
 
-            # 生成新guideline（增加异常捕获）
+            # rules check
             try:
                 prompt = summarize_prompt.format(distribution=distribution, rules=guideline)
                 response = Reflect_LLM(prompt)
             except Exception as e:
-                print(f"生成guideline时API超时: {e}，保存断点后退出")
+                print(f"Encountered API timeout {e} while check rules. Saving breakpoint and exiting.")
                 self._save_checkpoint({
                     'current_epoch': trial,
                     'best_mcc': best_mcc,
@@ -287,15 +260,15 @@ class Exp_Model:
             guideline = response.split("Rules:")[-1].strip()
             logger.info(f"Epoch {trial + 1} summarized guideline: {guideline}")
 
-            # 验证阶段
+            # validation
             for ind, agent in tqdm(enumerate(valid_agents), total=len(valid_agents), desc=f"Validation Agents in Trial {trial + 1}"):
-                if agent.is_validated:  # 跳过已验证的agent
+                if agent.is_validated:  
                     continue
                 try:
                     agent.guide_run(guideline, distribution)
                     agent.is_validated = True
                 except Exception as e:
-                    print(f"验证agent {ind}时API超时: {e}，保存断点后退出")
+                    print(f"Encountered API timeout {e} while validating agent {ind}. Saving breakpoint and exiting.")
                     self._save_checkpoint({
                         'current_epoch': trial,
                         'best_mcc': best_mcc,
@@ -321,12 +294,12 @@ class Exp_Model:
                 sample = {"features": agent.features, "label": agent.prediction, "output": response}
                 explanations.append(sample)
 
-            # 验证后保存结果
+            # save results
             with open(explanation_path,'w') as f:
                 json.dump(explanations,f)
             explanations = []
 
-            # 更新最佳指标
+            # update best metrics
             correct, incorrect = summarize_trial(valid_agents)
             logger.info(f'Finished Validation {trial + 1}, Correct: {len(correct)}, Incorrect: {len(incorrect)}')
             print(f'Finished Validation {trial + 1}, Correct: {len(correct)}, Incorrect: {len(incorrect)}')
@@ -340,9 +313,9 @@ class Exp_Model:
                 with open(guideline_path, 'w') as f:
                     f.write(best_guideline + "\n")
 
-            # 完成当前epoch后，再次保存断点
+            # save checkpoint after validation phase
             self._save_checkpoint({
-                'current_epoch': trial,  # 下一轮从trial+1开始
+                'current_epoch': trial,  
                 'best_mcc': best_mcc,
                 'guideline': guideline,
                 'best_guideline': best_guideline,
@@ -356,7 +329,7 @@ class Exp_Model:
                 'valid_agents': valid_agents
             }, trial)
 
-            # 保存临时文件（保留你原有的逻辑）
+            # save current guideline
             with open(current_guideline_path, 'w') as f:
                 f.write(guideline+'\n')
             with open(case_study_path, 'w') as f:
