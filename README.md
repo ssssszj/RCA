@@ -26,7 +26,7 @@ Diabetes: https://www.kaggle.com/datasets/nanditapore/healthcare-diabetes/data
 
 HeartDisease: https://www.kaggle.com/datasets/oktayrdeki/heart-disease
 
-We don't offer preprocess code, as it's quite easy-just transform tabular data to unstructured labels and texts.
+You need to transform tabular data to unstructured texts and labels.
 
 ## Running Experiments
 Now you can run experiment happily. Don't forget to set your llm api_key. For details, see utils/llm.py.
