@@ -173,28 +173,3 @@ class AgentLLM:
         return response
 
 
-class ScoreLLM:
-    def __init__(self):
-        self.client = OpenAI(
-            # api_key=os.getenv("DASHSCOPE_API_KEY"),  
-            api_key=os.getenv("OPENROUTER_API_KEY"),
-            # base_url="https://dashscope.aliyuncs.com/compatible-mode/v1/",  # qwen
-            # base_url="https://api.openai.com/v1/",  #openai
-            base_url="https://openrouter.ai/api/v1", 
-        )
-        # self.model = "qwen2.5-72b-instruct"
-        self.model = "qwen/qwen3-30b-a3b"
-        # self.model = "deepseek-r1"
-        # self.model = "deepseek-v3-64k-local-preview"
-        # self.model = "gpt-4.1-mini-2025-04-14"
-    
-    @retry(wait=wait_random_exponential(min=1, max=60), stop=stop_after_attempt(3))
-    def __call__(self,prompt):
-        messages = [{"role": "user", "content": prompt}]
-        completion = self.client.chat.completions.create(
-            model=self.model,
-            messages=messages,
-            )
-        
-        response = completion.choices[0].message.content
-        return response
