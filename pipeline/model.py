@@ -3,7 +3,6 @@ from utils.util import summarize_trial, remove_reflections, save_results, confus
 from utils.agents import PredictAgent
 from utils.llm import OpenAILLM,PipeLLM,AgentLLM
 from utils.crt_prompts import MODIFY_GUIDELINE_INSTRUCTION, SUMMARIZE_REVISE_INSTRUCTION
-from score import explanation_score
 import os, json
 import logging
 import openai
@@ -387,3 +386,4 @@ class Exp_Model:
         logger.info(f'TP:{tp},TN:{tn},FP:{fp},FN:{fn}')
         logger.info(f'MCC:{(tp*tn-fp*fn)/((tp+fp)*(tp+fn)*(tn+fp)*(tn+fn))**0.5}')
         logger.info(f'Precision:{precision},Recall:{recall},F1:{f1}')
+
