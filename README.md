@@ -1,6 +1,6 @@
-# Implementation Code of "Grounding AI Explanations in Eeperience: A Reflective Cognitive Architecture for Clinical Decision Support"
+# Implementation Code of "Rethinking Explainable Disease Prediction: Synergizing Accuracy and Reliability via Reflective Cognitive Architecture"
 
-This repository contains the official implementation of the paper "Grounding AI Explanations in Eeperience: A Reflective Cognitive Architecture for Clinical Decision Support"
+This repository contains the official implementation of the paper "Rethinking Explainable Disease Prediction: Synergizing Accuracy and Reliability via Reflective Cognitive Architecture"
 
 ## Environment Setup
 
@@ -20,11 +20,13 @@ pip install -r requirements.txt
 ```
 
 ## Dataset Preparation
-We used three datasets in the paper, two of which are open-sourced. Links are listed below:
+We used four datasets in the paper, three of which are open-sourced. Links are listed below:
 
 Diabetes: https://www.kaggle.com/datasets/nanditapore/healthcare-diabetes/data
 
-HeartDisease: https://www.kaggle.com/datasets/oktayrdeki/heart-disease
+Heart Disease: https://www.kaggle.com/datasets/oktayrdeki/heart-disease
+
+Cardiovascular Disease: https://www.kaggle.com/datasets/alamshihab075/heart-failure-diagnosis-data-for-machine-learning/data
 
 You need to transform tabular data to unstructured texts and labels.
 
